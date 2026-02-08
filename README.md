@@ -1,48 +1,100 @@
-Overview
-========
+# GCP Public Health & Clinic Trend Tracker
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+A scalable, serverless data pipeline designed to correlate internal clinic symptom logs with external public health trends (CDC FluView). This platform empowers clinical operations to predict patient surges and optimize resource allocation.
 
-Project Contents
-================
+## 🏗️ Architecture
 
-Your Astro project contains the following files and folders:
+The system follows a modern ELT (Extract, Load, Transform) architecture on Google Cloud Platform:
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://www.astronomer.io/docs/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+1.  **Ingestion**: Airflow (Cloud Composer) orchestrates data fetching from the **CDC FluView API** (via CMU Delphi) and internal clinic logs.
+2.  **Data Lake**: Raw JSON/CSV files are stored in **Google Cloud Storage (GCS)** for auditability.
+3.  **Data Warehouse**: **BigQuery** stores raw data and executes transformations.
+4.  **Transformation**: **dbt** (Data Build Tool) cleans, models, and aggregates data into "Marts" for reporting.
+5.  **Visualization**: **Metabase** (on Cloud Run) provides interactive dashboards for trend analysis.
 
-Deploy Your Project Locally
-===========================
+> For detailed architecture diagrams and decisions, see [docs/architecture.md](docs/architecture.md).
 
-1. Start Airflow on your local machine by running 'astro dev start'.
+## 🚀 Getting Started
 
-This command will spin up 4 Docker containers on your machine, each for a different Airflow component:
+### Prerequisites
 
-- Postgres: Airflow's Metadata Database
-- Webserver: The Airflow component responsible for rendering the Airflow UI
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+Ensure you have the following installed:
+*   [Python 3.9+](https://www.python.org/downloads/)
+*   [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) (`gcloud`)
+*   [Terraform](https://developer.hashicorp.com/terraform/install)
+*   [Docker](https://docs.docker.com/get-docker/) (optional, for local testing)
 
-2. Verify that all 4 Docker containers were created by running 'docker ps'.
+### Installation
 
-Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either [stop your existing Docker containers or change the port](https://www.astronomer.io/docs/astro/cli/troubleshoot-locally#ports-are-not-available-for-my-local-airflow-webserver).
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/forceliuss/disease-trend-pipeline.git
+    cd disease-trend-pipeline
+    ```
 
-3. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
+2.  **Set Up Virtual Environment**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
 
-You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
+3.  **Configure Environment**
+    Copy the example credentials (or use your own Service Account key from GCP Console):
+    ```bash
+    # Place your service account key file
+    mkdir -p secrets
+    cp /path/to/your/key.json secrets/gcp-sa-key.json
+    ```
+    Create a `.env` file:
+    ```bash
+    echo "GOOGLE_APPLICATION_CREDENTIALS=./secrets/gcp-sa-key.json" >> .env
+    echo "GCP_PROJECT_ID=health-project-486811" >> .env
+    ```
 
-Deploy Your Project to Astronomer
-=================================
+### Infrastructure Deployment (Terraform)
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
+Provision the GCP resources (GCS buckets, BigQuery datasets, Cloud Composer/Airflow):
 
-Contact
-=======
+1.  **Initialize Terraform**
+    ```bash
+    cd terraform
+    terraform init
+    ```
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+2.  **Plan and Apply**
+    ```bash
+    terraform plan -out=tfplan
+    terraform apply tfplan
+    ```
+    > **Note**: This will create billable resources on GCP. Ensure you have the necessary permissions and billing enabled on your project.
+
+## 🛠️ Usage
+
+### Running the Pipeline (Airflow)
+Once Cloud Composer is deployed, access the Airflow UI via the URL provided in the Terraform output.
+*   **`cdc_ingestion_weekly`**: Triggers every Wednesday to fetch new CDC data.
+*   **`clinic_logs_daily`**: Runs daily at 2:00 UTC to ingest internal logs.
+
+### Running Transformations (dbt)
+To manually run transformations locally:
+```bash
+dbt debug  # Test connection
+dbt deps   # Install dependencies
+dbt run    # Run all models
+dbt test   # Run data validation tests
+```
+
+## 📂 Project Structure
+
+```
+├── dags/                 # Airflow DAGs (Python)
+├── dbt_project/          # dbt models, seeds, and tests
+├── docs/                 # Documentation (Architecture, Guides, Tickets)
+├── scripts/              # Helper scripts (backfills, data generation)
+├── terraform/            # Infrastructure as Code (GCP resources)
+└── requirements.txt      # Python dependencies
+```
+
+---
+**Developed by Forceliuss**

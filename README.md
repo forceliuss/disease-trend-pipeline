@@ -12,8 +12,6 @@ The system follows a modern ELT (Extract, Load, Transform) architecture on Googl
 4.  **Transformation**: **dbt** (Data Build Tool) cleans, models, and aggregates data into "Marts" for reporting.
 5.  **Visualization**: **Metabase** (on Cloud Run) provides interactive dashboards for trend analysis.
 
-> For detailed architecture diagrams and decisions, see [docs/architecture.md](docs/architecture.md).
-
 ## Getting Started
 
 ### Prerequisites

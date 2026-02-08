@@ -2,7 +2,7 @@
 
 A scalable, serverless data pipeline designed to correlate internal clinic symptom logs with external public health trends (CDC FluView). This platform empowers clinical operations to predict patient surges and optimize resource allocation.
 
-## 🏗️ Architecture
+## Architecture
 
 The system follows a modern ELT (Extract, Load, Transform) architecture on Google Cloud Platform:
 
@@ -14,7 +14,7 @@ The system follows a modern ELT (Extract, Load, Transform) architecture on Googl
 
 > For detailed architecture diagrams and decisions, see [docs/architecture.md](docs/architecture.md).
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -69,7 +69,7 @@ Provision the GCP resources (GCS buckets, BigQuery datasets, Cloud Composer/Airf
     ```
     > **Note**: This will create billable resources on GCP. Ensure you have the necessary permissions and billing enabled on your project.
 
-## 🛠️ Usage
+## Usage
 
 ### Running the Pipeline (Airflow)
 Once Cloud Composer is deployed, access the Airflow UI via the URL provided in the Terraform output.
@@ -85,7 +85,7 @@ dbt run    # Run all models
 dbt test   # Run data validation tests
 ```
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 ├── dags/                 # Airflow DAGs (Python)
